@@ -1,59 +1,87 @@
 #include <stdio.h>
 
-void main()
-{
-    int n, time, at[10], bt[10], rt[10], ct, i, smallest;
-    int remain = 0;
+#define MAX 10
 
+int main()
+{
+    int n, time = 0;
+    int at[MAX], bt[MAX], rt[MAX];
+    int ct[MAX], wt[MAX], tat[MAX];
+    int i, smallest;
+    int remain = 0;
     float awt = 0, atat = 0;
 
-    printf("Enter no. of process: ");
+    // Input number of processes
+    printf("Enter number of processes: ");
     scanf("%d", &n);
 
-    printf("Enter arrival time and burst time of process:\n");
+    // Input arrival time and burst time
+    printf("Enter arrival time and burst time of each process:\n");
 
     for (i = 0; i < n; i++)
     {
-        scanf("%d", &at[i]);
-        scanf("%d", &bt[i]);
+        printf("P%d: ", i + 1);
+        scanf("%d %d", &at[i], &bt[i]);
 
         rt[i] = bt[i];
     }
 
-    printf("\n\nProcess\t| Turnaround Time | Waiting Time\n\n");
+    // Execute SRTF scheduling
+    printf("\nProcess\tTurnaround Time\tWaiting Time\n");
 
-    for (time = 0; remain != n; time++)
+    while (remain < n)
     {
+        smallest = -1;
+
+        // Find the arrived process with the shortest remaining time
         for (i = 0; i < n; i++)
         {
-            if (at[i] <= time && rt[i])
+            if (at[i] <= time && rt[i] > 0)
             {
-                smallest = i;
+                if (smallest == -1 || rt[i] < rt[smallest])
+                {
+                    smallest = i;
+                }
             }
         }
 
-        rt[smallest]--;
+        // If no process has arrived, advance the CPU time
+        if (smallest == -1)
+        {
+            time++;
+            continue;
+        }
 
+        // Execute the selected process for one time unit
+        rt[smallest]--;
+        time++;
+
+        // If the process finishes, calculate its times
         if (rt[smallest] == 0)
         {
             remain++;
 
-            ct = time + 1;
+            ct[smallest] = time;
+            tat[smallest] = ct[smallest] - at[smallest];
+            wt[smallest] = tat[smallest] - bt[smallest];
 
-            printf("\nP[%d]\t|\t%d\t\t%d",
+            awt += wt[smallest];
+            atat += tat[smallest];
+
+            printf("P%d\t%d\t\t%d\n",
                    smallest + 1,
-                   ct - at[smallest],
-                   ct - bt[smallest] - at[smallest]);
-
-            awt = awt + ct - bt[smallest] - at[smallest];
-
-            atat = atat + ct - at[smallest];
+                   tat[smallest],
+                   wt[smallest]);
         }
     }
 
+    // Calculate average times
     awt = awt / n;
     atat = atat / n;
 
-    printf("\n\nAverage Waiting Time = %f", awt);
-    printf("\nAverage Turnaround Time = %f", atat);
+    // Display results
+    printf("\nAverage Waiting Time: %.2f\n", awt);
+    printf("Average Turnaround Time: %.2f\n", atat);
+
+    return 0;
 }
