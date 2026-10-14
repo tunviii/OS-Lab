@@ -1,0 +1,38 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+int main() {
+    key_t key = 1234;
+    int shmid;
+    char *shared_memory;
+
+    // Access existing shared memory
+    shmid = shmget(key, 1024, 0666);
+
+    if (shmid == -1) {
+        perror("shmget");
+        exit(1);
+    }
+
+    // Attach shared memory
+    shared_memory = (char *)shmat(shmid, NULL, 0);
+
+    if (shared_memory == (char *)-1) {
+        perror("shmat");
+        exit(1);
+    }
+
+    // Read message
+    printf("Received message: %s", shared_memory);
+
+    // Detach shared memory
+    shmdt(shared_memory);
+
+    // Delete shared memory segment
+    shmctl(shmid, IPC_RMID, NULL);
+
+    return 0;
+}
