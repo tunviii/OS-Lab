@@ -1,58 +1,71 @@
 #include <stdio.h>
 
-int main() {
-    int n, i, j;
-    int at[10], bt[10], ct[10], wt[10], tat[10], p[10];
-    float avgWT = 0, avgTAT = 0;
+#define MAX 30
 
-    printf("Enter the number of processes: ");
+int main()
+{
+    int i, n;
+    int bt[MAX], at[MAX], wt[MAX], tat[MAX], temp[MAX];
+    float awt = 0, atat = 0;
+
+    // Input number of processes
+    printf("Enter number of processes: ");
     scanf("%d", &n);
 
-    // Input
-    for(i = 0; i < n; i++) {
-        p[i] = i + 1;
-        printf("\nEnter Arrival Time and Burst Time for P%d: ", p[i]);
-        scanf("%d%d", &at[i], &bt[i]);
+    // Input burst time
+    printf("Enter burst time of each process:\n");
+    for (i = 0; i < n; i++)
+    {
+        printf("P%d: ", i + 1);
+        scanf("%d", &bt[i]);
     }
 
-    // Sort according to Arrival Time
-    for(i = 0; i < n - 1; i++) {
-        for(j = i + 1; j < n; j++) {
-            if(at[i] > at[j]) {
-                int temp;
-                temp = at[i]; at[i] = at[j]; at[j] = temp;
-                temp = bt[i]; bt[i] = bt[j]; bt[j] = temp;
-                temp = p[i]; p[i] = p[j]; p[j] = temp;
-            }
+    // Input arrival time
+    printf("Enter arrival time of each process:\n");
+    for (i = 0; i < n; i++)
+    {
+        printf("P%d: ", i + 1);
+        scanf("%d", &at[i]);
+    }
+
+    // Initialize completion timeline
+    temp[0] = 0;
+
+    // Calculate waiting and turnaround times
+    for (i = 0; i < n; i++)
+    {
+        temp[i + 1] = temp[i] + bt[i];
+
+        wt[i] = temp[i] - at[i];
+
+        if (wt[i] < 0)
+        {
+            wt[i] = 0;
+            temp[i + 1] = at[i] + bt[i];
         }
+
+        tat[i] = wt[i] + bt[i];
+
+        awt += wt[i];
+        atat += tat[i];
     }
 
-    // Calculate Completion Time
-    ct[0] = at[0] + bt[0];
+    // Display process details
+    printf("\nProcess\tBurst Time\tArrival Time\tWaiting Time\tTurnaround Time\n");
 
-    for(i = 1; i < n; i++) {
-        if(ct[i - 1] < at[i])
-            ct[i] = at[i] + bt[i];
-        else
-            ct[i] = ct[i - 1] + bt[i];
+    for (i = 0; i < n; i++)
+    {
+        printf("P%d\t%d\t\t%d\t\t%d\t\t%d\n",
+               i + 1, bt[i], at[i], wt[i], tat[i]);
     }
 
-    // Calculate TAT and WT
-    for(i = 0; i < n; i++) {
-        tat[i] = ct[i] - at[i];
-        wt[i] = tat[i] - bt[i];
-        avgWT += wt[i];
-        avgTAT += tat[i];
-    }
+    // Calculate average times
+    awt = awt / n;
+    atat = atat / n;
 
-    printf("\nP\tAT\tBT\tCT\tTAT\tWT\n");
-    for(i = 0; i < n; i++) {
-        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
-               p[i], at[i], bt[i], ct[i], tat[i], wt[i]);
-    }
-
-    printf("\nAverage Waiting Time = %.2f", avgWT / n);
-    printf("\nAverage Turnaround Time = %.2f\n", avgTAT / n);
+    // Display results
+    printf("\nAverage Waiting Time: %.2f\n", awt);
+    printf("Average Turnaround Time: %.2f\n", atat);
 
     return 0;
 }
