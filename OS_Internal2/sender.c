@@ -1,18 +1,38 @@
-#include<stdio.h>
-#include<unistd.h>
-#include<stdlib.h>
-#include<sys/shm.h>
-#include<string.h>
-int main(){
-void *shared_memory;
-char buffer[100];
-int shmid;
-shmid=shmget((key_t) 2706,1024,0666|IPC_CREAT);
-printf("Key of shared memory: %d\n",shmid);
-shared_memory=shmat(shmid,NULL,0);
-printf("Process attached at:%p\n",shared_memory);
-printf("Enter data to write shared memory:\n");
-read(0,buffer,100);
-strcpy(shared_memory,buffer);
-printf("Data written is %s\n",(char *)shared_memory);
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+int main() {
+    key_t key = 1234;
+    int shmid;
+    char *shared_memory;
+
+    // Create shared memory segment
+    shmid = shmget(key, 1024, IPC_CREAT | 0666);
+
+    if (shmid == -1) {
+        perror("shmget");
+        exit(1);
+    }
+
+    // Attach shared memory
+    shared_memory = (char *)shmat(shmid, NULL, 0);
+
+    if (shared_memory == (char *)-1) {
+        perror("shmat");
+        exit(1);
+    }
+
+    // Write message
+    printf("Enter a message: ");
+    fgets(shared_memory, 1024, stdin);
+
+    printf("Message written to shared memory.\n");
+
+    // Detach shared memory
+    shmdt(shared_memory);
+
+    return 0;
 }
