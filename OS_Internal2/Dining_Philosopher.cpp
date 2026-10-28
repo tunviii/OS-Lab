@@ -1,65 +1,124 @@
 #include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
 
-int fork[5] = {1, 1, 1, 1, 1};
-int mutex = 1;
+#define N 5
 
-void wait(int *S)
+#define THINKING 2
+#define HUNGRY 1
+#define EATING 0
+
+#define LEFT ((phnum + N - 1) % N)
+#define RIGHT ((phnum + 1) % N)
+
+int state[N];
+int phil[N] = {0, 1, 2, 3, 4};
+
+sem_t mutex;
+sem_t S[N];
+
+void test(int phnum)
 {
-    while (*S <= 0);
-    (*S)--;
-}
-
-void signal(int *S)
-{
-    (*S)++;
-}
-
-void philosopher(int i)
-{
-    int left = i;
-    int right = (i + 1) % 5;
-
-    wait(&mutex);
-
-    if (fork[left] == 1 && fork[right] == 1)
+    if (state[phnum] == HUNGRY &&
+        state[LEFT] != EATING &&
+        state[RIGHT] != EATING)
     {
-        fork[left] = 0;
-        fork[right] = 0;
+        state[phnum] = EATING;
 
-        signal(&mutex);
+        printf("Philosopher %d takes fork %d and %d\n",
+               phnum + 1, LEFT + 1, phnum + 1);
 
-        printf("Philosopher %d is eating.\n", i + 1);
+        printf("Philosopher %d is Eating\n", phnum + 1);
 
-        fork[left] = 1;
-        fork[right] = 1;
-
-        printf("Philosopher %d finished eating.\n", i + 1);
-    }
-    else
-    {
-        signal(&mutex);
-        printf("Philosopher %d cannot eat. Forks unavailable!\n",
-               i + 1);
+        sem_post(&S[phnum]);
     }
 }
 
-int main()
+void take_fork(int phnum)
 {
-    int choice;
+    sem_wait(&mutex);
 
-    printf("Dining Philosophers Problem\n");
+    state[phnum] = HUNGRY;
+
+    printf("Philosopher %d is Hungry\n", phnum + 1);
+
+    test(phnum);
+
+    sem_post(&mutex);
+
+    sem_wait(&S[phnum]);
+
+    sleep(1);
+}
+
+void put_fork(int phnum)
+{
+    sem_wait(&mutex);
+
+    state[phnum] = THINKING;
+
+    printf("Philosopher %d putting fork %d and %d down\n",
+           phnum + 1, LEFT + 1, phnum + 1);
+
+    printf("Philosopher %d is Thinking\n", phnum + 1);
+
+    test(LEFT);
+    test(RIGHT);
+
+    sem_post(&mutex);
+}
+
+void *philosopher(void *num)
+{
+    int *i = (int *)num;
 
     while (1)
     {
-        printf("\nEnter philosopher number (1-5), 0 to exit: ");
-        scanf("%d", &choice);
+        sleep(1);
 
-        if (choice == 0)
-            return 0;
+        take_fork(*i);
 
-        if (choice >= 1 && choice <= 5)
-            philosopher(choice - 1);
-        else
-            printf("Invalid choice!\n");
+        sleep(1);
+
+        put_fork(*i);
     }
+
+    return NULL;
+}
+
+int main(void)
+{
+    int i;
+    pthread_t thread_id[N];
+
+    sem_init(&mutex, 0, 1);
+
+    for (i = 0; i < N; i++)
+    {
+        sem_init(&S[i], 0, 0);
+        state[i] = THINKING;
+    }
+
+    for (i = 0; i < N; i++)
+    {
+        pthread_create(&thread_id[i], NULL,
+                       philosopher, &phil[i]);
+
+        printf("Philosopher %d is Thinking\n", i + 1);
+    }
+
+    for (i = 0; i < N; i++)
+    {
+        pthread_join(thread_id[i], NULL);
+    }
+
+    for (i = 0; i < N; i++)
+    {
+        sem_destroy(&S[i]);
+    }
+
+    sem_destroy(&mutex);
+
+    return 0;
 }
